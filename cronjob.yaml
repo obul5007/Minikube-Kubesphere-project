@@ -1,0 +1,29 @@
+# cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+spec:
+  schedule: "0 3 * * *" # Every day at 3 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: db-backup
+              image: mysql:5.7
+              args:
+                - /bin/sh
+                - -c
+                - |
+                  mysqldump -h mysql -u $(DB_USER) -p$(DB_PASSWORD) mydb > /backups/db-backup.sql
+              envFrom:
+                - secretRef:
+                    name: db-secret
+              volumeMounts:
+                - name: backup-volume
+                  mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+            - name: backup-volume
+              emptyDir: {}
